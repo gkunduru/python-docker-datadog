@@ -1,0 +1,31 @@
+version: "3"
+services:
+  web:
+    build: web
+    command: python app.py         
+    image: pythonbusinessservice    
+    ports: 
+     - 5000:5000
+    environment:     
+    - DATADOG_HOST=datadog
+    - DD_TRACE_AGENT_PORT=8126
+  datadog:
+    build: datadog
+    ports: 
+     - 8126:8126
+    links:
+     - web        
+    environment: 
+     - DD_API_KEY=ca------------------dpo
+     - DD_SITE=datadoghq.com
+     - DD_HOSTNAME=pythonbusinessservice
+     - DD_TAGS=env:web-dev      
+     - DD_APM_ENABLED=true
+     - DD_APM_NON_LOCAL_TRAFFIC=true
+     - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true   
+     - DD_ENV=dev
+     - DD_SERVICE=web-dev       
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro

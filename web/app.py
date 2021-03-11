@@ -1,19 +1,28 @@
-from flask import Flask
-#from ddtrace import tracer
+from ddtrace import tracer
+from ddtrace import config
+import requests
 import os
+import time
 
-# tracer.configure(
-#     hostname='datadog',
-#     port=8126,
-# )
 
-app = Flask(__name__)
+# change the service name
+session = requests.session
+cfg = config.get_from(session)
+cfg['service_name'] = 'python_long_running_service'
 
-@app.route("/")
-def hello():
-    return "Flask inside Docker!!"
+
+def initiate_process() :
+    while True :
+        print ("process got initiated")
+        sample_url="https://earthquake.usgs.gov/fdsnws/event/1/application.json"
+        try:sample_response = requests.get(sample_url)
+        except:
+            print({"message_type" : "Error", "message" : "Connection to a EarthQuake API failed. Trying again..."})            
+        if(sample_response.status_code==200) :
+            print({"message_type" : "Info", "message" : "Connection Succeeded to a EarthQuake API"})
+        time.sleep(5)
+
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True,host='0.0.0.0',port=port)
+    initiate_process()

@@ -1,31 +1,44 @@
 version: "3"
+networks: 
+  pythonlongrunningservice-network:
+    name: python-docker-network
 services:
   web:
     build: web
-    command: python app.py         
-    image: pythonbusinessservice    
+    command: ddtrace-run python app.py
+    networks: 
+      - pythonlongrunningservice-network     
+    depends_on: 
+      datadog-agent:
+        condition: service_healthy         
+    image: pythonlongrunningservice:service    
     ports: 
      - 5000:5000
     environment:     
-    - DATADOG_HOST=datadog
+    - DATADOG_HOST=datadog-agent
     - DD_TRACE_AGENT_PORT=8126
-  datadog:
-    build: datadog
+    - DD_AGENT_HOST=datadog-agent    
+    - DD_LOGS_INJECTION=true
+    - DD_SERVICE=pythonlongrunning
+  datadog-agent:
+    build: datadog    
+    networks: 
+      - pythonlongrunningservice-network
     ports: 
-     - 8126:8126
-    links:
-     - web        
+     - 8126:8126          
     environment: 
-     - DD_API_KEY=ca------------------dpo
+     - DD_API_KEY=9e****a43
      - DD_SITE=datadoghq.com
-     - DD_HOSTNAME=pythonbusinessservice
-     - DD_TAGS=env:web-dev      
+     - DD_HOSTNAME=datadog-agent     
+     - DD_TAGS=env:nlpaas-poc
      - DD_APM_ENABLED=true
      - DD_APM_NON_LOCAL_TRAFFIC=true
-     - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true   
-     - DD_ENV=dev
-     - DD_SERVICE=web-dev       
+     - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true          
+     - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true 
+     - DD_CONTAINER_EXCLUDE="name:datadog-agent"   
+     - DD_LOGS_INJECTION=true            
     volumes:
      - /var/run/docker.sock:/var/run/docker.sock
      - /proc/:/host/proc/:ro
+     - /opt/datadog-agent/run:/opt/datadog-agent/run:rw
      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
